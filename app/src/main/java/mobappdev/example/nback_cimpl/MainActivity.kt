@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             NBack_CImplTheme {
                 // A surface container using the 'background' color from the theme
+                //todo gör navigation här
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

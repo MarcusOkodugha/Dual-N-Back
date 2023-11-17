@@ -31,6 +31,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 * Custom app entry point for manual dependency injection
  */
 class GameApplication: Application() {
+    //todo använs för att spara highescore
     lateinit var userPreferencesRespository: UserPreferencesRepository
 
     override fun onCreate() {

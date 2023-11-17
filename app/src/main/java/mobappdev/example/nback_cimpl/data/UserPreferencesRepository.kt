@@ -47,7 +47,7 @@ class UserPreferencesRepository (
             preferences[HIGHSCORE] ?: 0
         }
 
-    suspend fun saveHighScore(score: Int) {
+    suspend fun saveHighScore(score: Int) {//todo call in viewmodel to save highscore
         dataStore.edit { preferences ->
             preferences[HIGHSCORE] = score
         }

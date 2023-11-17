@@ -108,7 +108,6 @@ class GameVM(
             _gameState.value = _gameState.value.copy(eventValue = value)
             delay(eventInterval)
         }
-
     }
 
     private fun runAudioVisualGame(){
