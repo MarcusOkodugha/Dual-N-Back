@@ -38,13 +38,21 @@ interface GameViewModel {
     val gameState: StateFlow<GameState>
     val score: StateFlow<Int>
     val highscore: StateFlow<Int>
-    val nBack: Int
+//    val nBack: Int
+    val nBack:  StateFlow<Int>
 
     fun setGameType(gameType: GameType)
     fun startGame()
 
     fun checkMatch()
+    fun resetNCounter()
+
+    fun increaseNCounter()
+    fun decreaseNCounter()
 }
+
+
+// Inside your GameVM class
 
 class GameVM(
     private val userPreferencesRepository: UserPreferencesRepository
@@ -61,9 +69,9 @@ class GameVM(
     override val highscore: StateFlow<Int>
         get() = _highscore
 
-    // nBack is currently hardcoded
-    override val nBack: Int = 2
-
+    private val _nBack= MutableStateFlow(1)
+    override val nBack: StateFlow<Int>
+        get() = _nBack.asStateFlow()
     private var job: Job? = null  // coroutine job for the game event
     private val eventInterval: Long = 2000L  // 2000 ms (2s)
 
@@ -79,7 +87,7 @@ class GameVM(
         job?.cancel()  // Cancel any existing game loop
 
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
-        events = nBackHelper.generateNBackString(10, 9, 30, nBack).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+        events = nBackHelper.generateNBackString(10, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
         Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
 
         job = viewModelScope.launch {
@@ -98,6 +106,22 @@ class GameVM(
          * Make sure the user can only register a match once for each event.
          */
     }
+
+    override fun resetNCounter() {
+        _nBack.value = 0
+    }
+
+    override fun increaseNCounter() {
+        _nBack.value +=1
+    }
+
+    override fun decreaseNCounter() {
+        if (_nBack.value>1){
+            _nBack.value -=1
+        }
+
+    }
+
     private fun runAudioGame() {
         // Todo: Make work for Basic grade
     }
@@ -131,6 +155,7 @@ class GameVM(
             }
         }
     }
+
 }
 
 // Class with the different game types
@@ -153,8 +178,10 @@ class FakeVM: GameViewModel{
         get() = MutableStateFlow(2).asStateFlow()
     override val highscore: StateFlow<Int>
         get() = MutableStateFlow(42).asStateFlow()
-    override val nBack: Int
-        get() = 2
+//    override val nBack: Int
+//        get() = 2
+    override val nBack: StateFlow<Int>
+        get() = MutableStateFlow(0).asStateFlow()
 
     override fun setGameType(gameType: GameType) {
     }
@@ -163,5 +190,17 @@ class FakeVM: GameViewModel{
     }
 
     override fun checkMatch() {
+    }
+
+    override fun resetNCounter() {
+        TODO("Not yet implemented")
+    }
+
+    override fun increaseNCounter() {
+        TODO("Not yet implemented")
+    }
+
+    override fun decreaseNCounter() {
+        TODO("Not yet implemented")
     }
 }

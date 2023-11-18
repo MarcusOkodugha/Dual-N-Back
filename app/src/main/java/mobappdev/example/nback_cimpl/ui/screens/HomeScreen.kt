@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -55,6 +57,8 @@ fun HomeScreen(
     val gameState by vm.gameState.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val nBackValue by vm.nBack.collectAsState()
+
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) }
@@ -68,7 +72,7 @@ fun HomeScreen(
         ) {
             Text(
                 modifier = Modifier.padding(32.dp),
-                text = "High-Score = $highscore",
+                text = "High Score  $highscore",
                 style = MaterialTheme.typography.headlineLarge
             )
             // Todo: You'll probably want to change this "BOX" part of the composable
@@ -80,65 +84,100 @@ fun HomeScreen(
                     Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (gameState.eventValue != -1) {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Current eventValue is: ${gameState.eventValue}",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    Button(onClick = vm::startGame) {
-                        Text(text = "Generate eventValues")
-                    }
-                }
-            }
-            Text(
-                modifier = Modifier.padding(16.dp),
-                text = "Start Game".uppercase(),
-                style = MaterialTheme.typography.displaySmall
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(onClick = {
-                    // Todo: change this button behaviour
-                    scope.launch {
-                        snackBarHostState.showSnackbar(
-                            message = "Hey! you clicked the audio button"
-                        )
-                    }
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.sound_on),
-                        contentDescription = "Sound",
+                    //nBack selctin section
+                    Row (
                         modifier = Modifier
-                            .height(48.dp)
-                            .aspectRatio(3f / 2f)
-                    )
-                }
-                Button(
-                    onClick = {
-                        // Todo: change this button behaviour
-                        scope.launch {
-                            snackBarHostState.showSnackbar(
-                                message = "Hey! you clicked the visual button",
-                                duration = SnackbarDuration.Short
-                            )
+                            .fillMaxWidth()
+                            .padding(100.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+
+                        //left button
+                        Button(
+                            onClick = { vm.decreaseNCounter()},
+                            shape = RoundedCornerShape(2.dp),
+
+                        ) {
+                            Text(text = "-1")
                         }
-                    }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.visual),
-                        contentDescription = "Visual",
+                        //nBck VALUE text
+                        Text(
+                            text = "N = "+ nBackValue.toString(),
+                        )
+                        Button(
+                            onClick = { vm.increaseNCounter()},
+                            shape = RoundedCornerShape(2.dp),
+                        ) {
+                            Text(text = "+1")
+                        }
+                    }
+                    Row(
                         modifier = Modifier
-                            .height(48.dp)
-                            .aspectRatio(3f / 2f)
-                    )
+                            .fillMaxWidth()
+                            .padding(horizontal =100.dp),
+                    ){
+//                         if (gameState.eventValue != -1) {
+//                            Text(
+//                                modifier = Modifier.fillMaxWidth(),
+//                                text = "Current eventValue is: ${gameState.eventValue}",
+//                                textAlign = TextAlign.Center
+//                            )
+//                        }
+                        Button(
+                            onClick = vm::startGame,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(2.dp),
+                        ) {
+                            Text(text = "Sart Game")
+                        }
+                    }
                 }
             }
+
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(16.dp),
+//                horizontalArrangement = Arrangement.SpaceAround,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Button(onClick = {
+//                    // Todo: change this button behaviour
+//                    scope.launch {
+//                        snackBarHostState.showSnackbar(
+//                            message = "Hey! you clicked the audio button"
+//                        )
+//                    }
+//                }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.sound_on),
+//                        contentDescription = "Sound",
+//                        modifier = Modifier
+//                            .height(48.dp)
+//                            .aspectRatio(3f / 2f)
+//                    )
+//                }
+//                Button(
+//                    onClick = {
+//                        // Todo: change this button behaviour
+//                        scope.launch {
+//                            snackBarHostState.showSnackbar(
+//                                message = "Hey! you clicked the visual button",
+//                                duration = SnackbarDuration.Short
+//                            )
+//                        }
+//                    }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.visual),
+//                        contentDescription = "Visual",
+//                        modifier = Modifier
+//                            .height(48.dp)
+//                            .aspectRatio(3f / 2f)
+//                    )
+//                }
+//            }
         }
     }
 }

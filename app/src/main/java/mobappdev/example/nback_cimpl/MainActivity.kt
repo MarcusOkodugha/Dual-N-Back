@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
                         factory = GameVM.Factory
                     )
 
+
                     // Instantiate the homescreen
                     HomeScreen(vm = gameViewModel)
                 }
