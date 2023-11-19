@@ -1,6 +1,7 @@
 package mobappdev.example.nback_cimpl.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.R
-import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
 
@@ -75,8 +75,6 @@ fun HomeScreen(
                 .background(Color(152, 185, 234)),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
-
-
         ) {
             Text(
                 modifier = Modifier.padding(32.dp),
@@ -90,39 +88,12 @@ fun HomeScreen(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
             ) {
+
                 Column(
                     Modifier.fillMaxWidth(),
-//                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    //nBack selctin section
-                    Row (
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(100.dp),
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically
-                    ){
-                        //left button
-                        Button(
-                            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
-                            onClick = { vm.decreaseNCounter()},
-                            shape = RoundedCornerShape(2.dp),
+                    Settings(vm = vm)
 
-                        ) {
-                            Text(text = "-1")
-                        }
-                        //nBck VALUE text
-                        Text(
-                            text = "N = "+ nBackValue.toString(),
-                        )
-                        Button(//right button
-                            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
-                            onClick = { vm.increaseNCounter()},
-                            shape = RoundedCornerShape(2.dp),
-                        ) {
-                            Text(text = "+1")
-                        }
-                    }
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -162,6 +133,7 @@ fun HomeScreen(
                                 navController.navigate("game")
                             },
                             modifier = Modifier
+
                             ,
                             colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
                             shape = RoundedCornerShape(2.dp),
@@ -173,6 +145,117 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Composable
+fun Settings(
+    vm: GameViewModel,
+
+){
+    val combinations by vm.combinations.collectAsState()
+    val nBackValue by vm.nBack.collectAsState()
+    val size by vm.size.collectAsState()
+    val length by vm.length.collectAsState()
+
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        //left button
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.decreaseNCounter()},
+            shape = RoundedCornerShape(2.dp),
+
+            ) {
+            Text(text = "-1")
+        }
+        Text(
+            text = "N = "+ nBackValue.toString(),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.increaseNCounter()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "+1")
+        }
+    }
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.decreaseCombinatons()},
+            shape = RoundedCornerShape(2.dp),
+            ) {
+            Text(text = "-1")
+        }
+        Text(
+            text = "Combinations = "+ combinations.toString(),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.increaseCombinations()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "+1")
+        }
+    }
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.decreaseSize()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "-1")
+        }
+        Text(
+            text = "Size = "+ size.toString(),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.increaseSize()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "+1")
+        }
+    }
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.decreaseLenght()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "-1")
+        }
+        Text(
+            text = "Length = "+ length.toString(),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.increaseLenght()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "+1")
+        }
+    }
+
 }
 
 //@Preview

@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import mobappdev.example.nback_cimpl.data.UserPreferencesRepository
+import mobappdev.example.nback_cimpl.model.data.UserPreferencesRepository
 
 /**
  * This is the Main Application
@@ -31,11 +31,16 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 * Custom app entry point for manual dependency injection
  */
 class GameApplication: Application() {
+    companion object {
+        lateinit var instance: GameApplication
+            private set
+    }
     //todo använs för att spara highescore
     lateinit var userPreferencesRespository: UserPreferencesRepository
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         userPreferencesRespository = UserPreferencesRepository(dataStore)
     }
 }

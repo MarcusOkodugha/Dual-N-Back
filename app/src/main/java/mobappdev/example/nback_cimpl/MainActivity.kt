@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                         factory = GameVM.Factory
                     )
                     // Navigering
-                    NavHost(navController, startDestination = "home"){//todo set to home insted of gam
+                    NavHost(navController, startDestination = "home"){
                         composable("home") {
                             // Instantiate the homescreen
                             HomeScreen(vm = gameViewModel,navController)

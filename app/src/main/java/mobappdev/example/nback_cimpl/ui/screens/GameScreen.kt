@@ -1,6 +1,7 @@
 package mobappdev.example.nback_cimpl.ui.screens
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
@@ -51,7 +53,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.R
-import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
+//import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
+import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
+
 
 @Composable
 fun GameScreen(
@@ -60,12 +64,14 @@ fun GameScreen(
     val gameState by vm.gameState.collectAsState()
     val gridState by vm.grid.collectAsState()
     val highlightedTilePositionState by vm.highlightedTilePosition.collectAsState()
+    val isTileHighlighted by vm.isTileHighlighted.collectAsState()
     val nBackValue by vm.nBack.collectAsState()
+    val buttonColor by vm.buttonColor.collectAsState()
+
     // Container
     Column(
         modifier = Modifier
             .fillMaxSize()
-//            .background(Color.Yellow)
         ,
         horizontalAlignment = Alignment.CenterHorizontally,
     ){
@@ -96,53 +102,11 @@ fun GameScreen(
         ) {
             //grid
 
-            Grid(grid = gridState, highlightedTilePosition = highlightedTilePositionState)
+            Grid(grid = gridState, highlightedTilePosition = highlightedTilePositionState,isTileHighlighted = isTileHighlighted)
         }
         Column(
-//            verticalArrangement = Arrangement.Bottom
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-//                    .weight(0.25f),
-            ){
-
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-    //                    .background(Color.Cyan)
-                ){
-                    Button(//left button sound
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .aspectRatio(3f / 2f),
-                        onClick = { /*TODO*/ },
-                        colors = ButtonDefaults.buttonColors( Color(221, 91, 80)),
-                        shape = RoundedCornerShape(2.dp),
-                        ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.sound_on),
-                            contentDescription = "Sound",
-                            modifier = Modifier
-//                                .aspectRatio(5f / 2f)
-                        )
-                    }
-                    Button(//right button Position
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(3f / 2f),
-                        onClick = { /*TODO*/ },
-                        colors = ButtonDefaults.buttonColors( Color(159, 212, 161)),
-                        shape = RoundedCornerShape(2.dp),
-                        ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.visual),
-                            contentDescription = "Visual",
-
-                        )
-                    }
-                }
-            }
+            GameButtons(vm = vm)
         }
     }
 }
@@ -150,6 +114,7 @@ fun GameScreen(
 fun Grid(
     grid: List<List<Boolean>>,
     highlightedTilePosition: Pair<Int, Int>?,
+    isTileHighlighted: Boolean,
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -159,11 +124,9 @@ fun Grid(
     }else{
         maxScreenSize=screenHeight.dp
     }
-
     Column(
         modifier = Modifier
             .size(width = maxScreenSize, height = maxScreenSize)
-//            .background(Color.Red)
             .padding(40.dp)
         ,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -172,13 +135,12 @@ fun Grid(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-//                    .background(Color.Green)
                 ,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 for (j in grid[i].indices) {
                     Tile(
-                        isHighlighted = highlightedTilePosition == Pair(i, j)
+                        isHighlighted = highlightedTilePosition == Pair(i, j),isTileHighlighted= isTileHighlighted
                     )
                 }
             }
@@ -188,20 +150,115 @@ fun Grid(
 
 @Composable
 fun Tile(
-    isHighlighted: Boolean
+    isHighlighted: Boolean,
+    isTileHighlighted: Boolean,
 ) {
     Box(
         modifier = Modifier
             .size(100.dp)
-            .background(if (isHighlighted) Color(231, 181, 106) else Color(199, 216, 240))
+            .background(
+                if (isHighlighted && isTileHighlighted) Color(231, 181, 106) else Color(
+                    199,
+                    216,
+                    240
+                )
+            )
             .clip(RoundedCornerShape(20.dp)),
-//            .clickable { /* Handle tile click if needed */ },
         contentAlignment = Alignment.Center,
 
     ) {
 
-        if (isHighlighted) {
+    }
+}
+@Composable
+fun GameButtons(
+    vm: GameViewModel,
+) {
+    val buttonColor by vm.buttonColor.collectAsState()
+    val gameState by vm.gameState.collectAsState()
 
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        when (gameState.gameType) {
+            GameType.AudioVisual -> {
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 40.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    val buttonModifier = Modifier
+                        .width(100.dp) // Adjust the width as needed
+
+                    Button(
+                        modifier = buttonModifier,
+                        onClick = {
+                            vm.handleButtonTypePressed(GameType.Audio)
+                        },
+                        colors = ButtonDefaults.buttonColors(buttonColor),
+                        shape = RoundedCornerShape(2.dp),
+                    ) {
+                        Text(text = "Sound")
+                    }
+                    Button(
+                        modifier = buttonModifier,
+                        onClick = {
+                        },
+                        colors = ButtonDefaults.buttonColors(buttonColor),
+                        shape = RoundedCornerShape(2.dp),
+                    ) {
+                        Text(text = "Both")
+                    }
+
+                    Button(
+                        modifier = buttonModifier,
+                        onClick = {
+                            vm.handleButtonTypePressed(GameType.Visual)
+
+                        },
+                        colors = ButtonDefaults.buttonColors(buttonColor),
+                        shape = RoundedCornerShape(2.dp),
+                    ) {
+                        Text(text = "Position")
+                    }
+                }
+            }
+            GameType.Audio -> {
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(3f / 2f)
+                        .border(2.dp, Color(24, 30, 37))
+                    ,
+                    onClick = { vm.handleButtonTypePressed(GameType.Audio) },
+                    colors = ButtonDefaults.buttonColors(buttonColor),
+                    shape = RoundedCornerShape(2.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.sound_on),
+                        contentDescription = "Sound",
+                    )
+                }
+            }
+            GameType.Visual -> {
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(3f / 2f)
+                        .border(2.dp, Color(24, 30, 37))
+                    ,
+                    onClick = { vm.handleButtonTypePressed(GameType.Visual) },
+                    colors = ButtonDefaults.buttonColors(buttonColor),
+                    shape = RoundedCornerShape(2.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.visual),
+                        contentDescription = "Visual",
+                    )
+                }
+            }
         }
     }
 }
+

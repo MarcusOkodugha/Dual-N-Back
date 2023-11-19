@@ -15,8 +15,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.GameApplication
 import mobappdev.example.nback_cimpl.NBackHelper
-import mobappdev.example.nback_cimpl.data.UserPreferencesRepository
+import mobappdev.example.nback_cimpl.model.data.UserPreferencesRepository
+import android.speech.tts.TextToSpeech
+import android.speech.tts.TextToSpeech.OnInitListener
+import android.speech.tts.TextToSpeech.SUCCESS
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.isActive
 
+import java.util.Locale
 /**
  * This is the GameViewModel.
  *
@@ -41,23 +49,32 @@ interface GameViewModel {
     val nBack:  StateFlow<Int>
     val grid: StateFlow<List<List<Boolean>>>
     val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
+    val buttonColor:StateFlow<Color>
+    val combinations:  StateFlow<Int>
+    val size:  StateFlow<Int>
+    val length:  StateFlow<Int>
+    val isTileHighlighted: StateFlow<Boolean>
 
     fun setGameType(gameType: GameType)
     fun startGame()
-
     fun checkMatch()
-    fun resetNCounter()
-
     fun increaseNCounter()
     fun decreaseNCounter()
+    fun increaseCombinations()
+    fun decreaseCombinatons()
+    fun increaseSize()
+    fun decreaseSize()
+    fun increaseLenght()
+    fun decreaseLenght()
+    fun handleButtonTypePressed(buttonType: GameType)
+    fun setButtonColor(color: Color)
 }
-
-
 // Inside your GameVM class
 
 class GameVM(
     private val userPreferencesRepository: UserPreferencesRepository
-): GameViewModel, ViewModel() {
+): GameViewModel, ViewModel(),OnInitListener {
+    private var counter = 0
     private val _gameState = MutableStateFlow(GameState())
     override val gameState: StateFlow<GameState>
         get() = _gameState.asStateFlow()
@@ -82,12 +99,31 @@ class GameVM(
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
-    private val gridSize = 3
-//    private var grid: List<List<Boolean>> = List(gridSize) { List(gridSize) { false } }
-//    private var highlightedTilePosition: Pair<Int, Int>? = null
     private val _highlightedTilePosition = MutableStateFlow<Pair<Int, Int>?>(null)
     override val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
         get() = _highlightedTilePosition.asStateFlow()
+    private val _textToSpeech: TextToSpeech by lazy {
+        TextToSpeech(GameApplication.instance, this)
+    }
+    val _buttonColor = MutableStateFlow(Color.Transparent)
+    override val buttonColor: StateFlow<Color>
+        get() = _buttonColor.asStateFlow()
+    private val _combinations= MutableStateFlow(1)
+    override val combinations: StateFlow<Int>
+        get() = _combinations.asStateFlow()
+    private val _size= MutableStateFlow(3)
+    override val size: StateFlow<Int>
+        get() = _size.asStateFlow()
+    private val _lenght= MutableStateFlow(20)
+    override val length: StateFlow<Int>
+        get() = _lenght.asStateFlow()
+    private val _isTileHighlighted = MutableStateFlow(false)
+    override val isTileHighlighted: StateFlow<Boolean>
+        get() = _isTileHighlighted.asStateFlow()
+
+    override fun setButtonColor(color: Color) {
+        _buttonColor.value = color
+    }
 
     override fun setGameType(gameType: GameType) {
         // update the gametype in the gamestate
@@ -96,19 +132,26 @@ class GameVM(
 
     override fun startGame() {
         job?.cancel()  // Cancel any existing game loop
-
+        reset()
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
-        events = nBackHelper.generateNBackString(10, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+//        events = nBackHelper.generateNBackString(length.value, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+// With your hardcoded array
+        events = arrayOf(3, 1, 1, 2, 5, 6, 7, 8, 9, 4)//todo remve hardcodeing
         Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
 
         job = viewModelScope.launch {
             when (gameState.value.gameType) {
                 GameType.Audio -> runAudioGame()
-                GameType.AudioVisual -> runAudioVisualGame()
+                GameType.AudioVisual -> runAudioVisualGame(events)
                 GameType.Visual -> runVisualGame(events)
             }
             // Todo: update the highscore
         }
+    }
+    private fun reset(){
+        //rests all settings
+        counter = 0
+        _buttonColor.value = Color(96, 140, 219)
     }
 
     override fun checkMatch() {
@@ -118,37 +161,66 @@ class GameVM(
          */
     }
 
-    override fun resetNCounter() {
-        _nBack.value = 0
-    }
+    private suspend fun runAudioGame() {
+        for (value in events) {
+            _gameState.value = _gameState.value.copy(eventValue = value)
+            speakLetter(convertToLetter(value))
+            delay(eventInterval)
 
-    override fun increaseNCounter() {
-        _nBack.value +=1
-    }
-
-    override fun decreaseNCounter() {
-        if (_nBack.value>1){
-            _nBack.value -=1
+            counter++
         }
-
-    }
-
-    private fun runAudioGame() {
-        // Todo: Make work for Basic grade
     }
 
     private suspend fun runVisualGame(events: Array<Int>){
-        // Todo: Replace this code for actual game code
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValue = value)
             updateGrid()
+            _isTileHighlighted.value = !_isTileHighlighted.value
             updateHighlightedTilePosition()
-            delay(eventInterval)
+            delay(eventInterval/2)
+            _isTileHighlighted.value = !_isTileHighlighted.value
+            updateHighlightedTilePosition()
+            delay(eventInterval/2)
+
+            counter++
         }
     }
 
-    private fun runAudioVisualGame(){
-        // Todo: Make work for Higher grade
+    private suspend fun runAudioVisualGame(events: Array<Int>){
+        for (value in events) {
+            _gameState.value = _gameState.value.copy(eventValue = value)
+            updateGrid()
+
+            speakLetter(convertToLetter(value))
+
+            _isTileHighlighted.value = true
+            updateHighlightedTilePosition()
+            delay(eventInterval/2)
+            _isTileHighlighted.value = false
+            updateHighlightedTilePosition()
+            delay(eventInterval/2)
+
+            counter++
+
+        }
+    }
+    override fun handleButtonTypePressed(buttonType: GameType) {
+
+        val currentEventValue = _gameState.value.eventValue
+        val nBackValue = _nBack.value
+
+        val targetIndex = counter - nBackValue
+        val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
+
+        _buttonColor.value = if (isMatch) Color.Green else Color.Red
+        _score.value ++
+        //todo score ++
+
+        viewModelScope.launch {
+            delay(eventInterval / 2)
+            _buttonColor.value = Color(96, 140, 219)
+
+        }
     }
 
     companion object {
@@ -168,27 +240,66 @@ class GameVM(
             }
         }
     }
-//    fun getHighlightedTilePosition(): StateFlow<Pair<Int, Int>?> {
-//        return highlightedTilePosition
-//    }
+
     private fun updateHighlightedTilePosition() {
         val eventValue = _gameState.value.eventValue
-        val row = (eventValue - 1) / gridSize
-        val col = (eventValue - 1) % gridSize
+        val row = (eventValue - 1) / size.value
+        val col = (eventValue - 1) % size.value
         _highlightedTilePosition.value = Pair(row, col)
     }
     private fun updateGrid() {
-        val grid = List(gridSize) { List(gridSize) { false } }
-
+        val grid = List(size.value) { List(size.value) { false } }
         _grid.value = grid
     }
+    override fun onInit(status: Int) {
+        if (status == SUCCESS) {
+            _textToSpeech.language = Locale.getDefault()
+        } else {
+            Log.e("GameVM", "TextToSpeech initialization failed.")
+        }
+    }
 
-
+    private fun speakLetter(letter: Char) {
+        _textToSpeech.speak(letter.toString(), TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+    private fun convertToLetter(value: Int): Char {
+        require(value in 1..26) { "Value must be between 1 and 26 inclusive" }
+        return ('A'.code + value - 1).toChar()
+    }
+    override fun increaseNCounter() {
+        _nBack.value +=1
+    }
+    override fun decreaseNCounter() {
+        if (_nBack.value>1){
+            _nBack.value -=1
+        }
+    }
+    override fun increaseSize() {
+        _size.value +=1
+    }
+    override fun decreaseSize() {
+        if (_size.value>1){
+            _size.value -=1
+        }
+    }
+    override fun increaseCombinations() {
+        _combinations.value +=1
+    }
+    override fun decreaseCombinatons() {
+        if (_combinations.value>1){
+            _combinations.value -=1
+        }
+    }
+    override fun increaseLenght() {
+        _lenght.value +=1
+    }
+    override fun decreaseLenght() {
+        if (_lenght.value>1){
+            _lenght.value -=1
+        }
+    }
 }
 
-//}
-
-// Class with the different game types
 enum class GameType{
     Audio,
     Visual,
@@ -201,45 +312,4 @@ data class GameState(
     val eventValue: Int = -1  // The value of the array string
 )
 
-class FakeVM: GameViewModel{
-    override val gameState: StateFlow<GameState>
-        get() = MutableStateFlow(GameState()).asStateFlow()
-    override val score: StateFlow<Int>
-        get() = MutableStateFlow(2).asStateFlow()
-    override val highscore: StateFlow<Int>
-        get() = MutableStateFlow(42).asStateFlow()
-//    override val nBack: Int
-//        get() = 2
-    override val nBack: StateFlow<Int>
-        get() = MutableStateFlow(0).asStateFlow()
-    override val grid: StateFlow<List<List<Boolean>>>
-        get() = MutableStateFlow(generateFakeGrid()).asStateFlow()
 
-    override val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
-        get() = MutableStateFlow(null).asStateFlow()
-
-    private fun generateFakeGrid(): List<List<Boolean>> {
-        // Implement logic to generate a fake grid
-        return List(3) { List(3) { true } }
-    }
-    override fun setGameType(gameType: GameType) {
-    }
-
-    override fun startGame() {
-    }
-
-    override fun checkMatch() {
-    }
-
-    override fun resetNCounter() {
-        TODO("Not yet implemented")
-    }
-
-    override fun increaseNCounter() {
-        TODO("Not yet implemented")
-    }
-
-    override fun decreaseNCounter() {
-        TODO("Not yet implemented")
-    }
-}
