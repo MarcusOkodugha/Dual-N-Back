@@ -85,12 +85,15 @@ fun HomeScreen(
                 )
             // Todo: You'll probably want to change this "BOX" part of the composable
             Box(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .padding(horizontal = 60.dp)
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
 
                 Column(
                     Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Settings(vm = vm)
 
@@ -156,11 +159,12 @@ fun Settings(
     val nBackValue by vm.nBack.collectAsState()
     val size by vm.size.collectAsState()
     val length by vm.length.collectAsState()
+    val eventInterval by vm.eventInterval.collectAsState()
 
     Row (
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         //left button
@@ -186,7 +190,7 @@ fun Settings(
     Row (
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         Button(
@@ -210,7 +214,7 @@ fun Settings(
     Row (
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         Button(
@@ -234,7 +238,7 @@ fun Settings(
     Row (
         modifier = Modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceAround,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         Button(
@@ -250,6 +254,30 @@ fun Settings(
         Button(
             colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
             onClick = { vm.increaseLenght()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "+1")
+        }
+    }
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.decreaseEventInterval()},
+            shape = RoundedCornerShape(2.dp),
+        ) {
+            Text(text = "-1")
+        }
+        Text(
+            text = "Interval = "+ eventInterval.toString(),
+        )
+        Button(
+            colors = ButtonDefaults.buttonColors( Color(96, 140, 219)),
+            onClick = { vm.increaseEventInterval()},
             shape = RoundedCornerShape(2.dp),
         ) {
             Text(text = "+1")

@@ -54,6 +54,7 @@ interface GameViewModel {
     val size:  StateFlow<Int>
     val length:  StateFlow<Int>
     val isTileHighlighted: StateFlow<Boolean>
+    val eventInterval: StateFlow<Long>
 
     fun setGameType(gameType: GameType)
     fun startGame()
@@ -66,6 +67,8 @@ interface GameViewModel {
     fun decreaseSize()
     fun increaseLenght()
     fun decreaseLenght()
+    fun increaseEventInterval()
+    fun decreaseEventInterval()
     fun handleButtonTypePressed(buttonType: GameType)
     fun setButtonColor(color: Color)
 }
@@ -95,7 +98,11 @@ class GameVM(
         get() = _grid.asStateFlow()
 
     private var job: Job? = null  // coroutine job for the game event
-    private val eventInterval: Long = 2000L  // 2000 ms (2s)
+//    private val eventInterval: Long = 2000L  // 2000 ms (2s)
+    private val _eventInterval = MutableStateFlow(2000L)
+    override val eventInterval: StateFlow<Long>
+        get() = _eventInterval.asStateFlow()
+
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
@@ -136,12 +143,12 @@ class GameVM(
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
 //        events = nBackHelper.generateNBackString(length.value, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
 // With your hardcoded array
-        events = arrayOf(3, 1, 1, 2, 5, 6, 7, 8, 9, 4)//todo remve hardcodeing
+        events = arrayOf(2, 1, 2, 3, 1, 5, 1, 8, 9, 4)//todo remve hardcodeing
         Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
 
         job = viewModelScope.launch {
             when (gameState.value.gameType) {
-                GameType.Audio -> runAudioGame()
+                GameType.Audio -> runAudioGame(events)
                 GameType.AudioVisual -> runAudioVisualGame(events)
                 GameType.Visual -> runVisualGame(events)
             }
@@ -152,6 +159,7 @@ class GameVM(
         //rests all settings
         counter = 0
         _buttonColor.value = Color(96, 140, 219)
+        _grid.value = emptyList()
     }
 
     override fun checkMatch() {
@@ -161,11 +169,25 @@ class GameVM(
          */
     }
 
-    private suspend fun runAudioGame() {
+    private suspend fun runAudioGame(events: Array<Int>) {
+        speakLetter(convertToLetter(counter+1))
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValue = value)
+            delay(eventInterval.value)
             speakLetter(convertToLetter(value))
-            delay(eventInterval)
+
+            val currentEventValue = _gameState.value.eventValue
+            val nBackValue = _nBack.value
+            val targetIndex = counter - nBackValue
+            val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
+
+            Log.e("Logic", ".")
+            Log.e("Logic", "value of target ${events.getOrNull(targetIndex)}")
+            Log.e("Logic", "curent value $currentEventValue")
+            Log.e("Logic", "Match $isMatch")
+            Log.e("Logic", "Score ${score.value}")
+
+            Log.e("Logic", ".")
 
             counter++
         }
@@ -177,10 +199,23 @@ class GameVM(
             updateGrid()
             _isTileHighlighted.value = !_isTileHighlighted.value
             updateHighlightedTilePosition()
-            delay(eventInterval/2)
+            delay(eventInterval.value/2)
             _isTileHighlighted.value = !_isTileHighlighted.value
             updateHighlightedTilePosition()
-            delay(eventInterval/2)
+            delay(eventInterval.value/2)
+
+            val currentEventValue = _gameState.value.eventValue
+            val nBackValue = _nBack.value
+            val targetIndex = counter - nBackValue
+            val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
+
+            Log.e("Logic", ".")
+            Log.e("Logic", "value of target ${events.getOrNull(targetIndex)}")
+            Log.e("Logic", "curent value $currentEventValue")
+            Log.e("Logic", "Match $isMatch")
+            Log.e("Logic", "Score ${score.value}")
+
+            Log.e("Logic", ".")
 
             counter++
         }
@@ -195,34 +230,47 @@ class GameVM(
 
             _isTileHighlighted.value = true
             updateHighlightedTilePosition()
-            delay(eventInterval/2)
+            delay(eventInterval.value/2)
             _isTileHighlighted.value = false
             updateHighlightedTilePosition()
-            delay(eventInterval/2)
+            delay(eventInterval.value/2)
 
             counter++
 
         }
     }
-    override fun handleButtonTypePressed(buttonType: GameType) {
 
-        val currentEventValue = _gameState.value.eventValue
-        val nBackValue = _nBack.value
+override fun handleButtonTypePressed(buttonType: GameType) {
+    val currentEventValue = _gameState.value.eventValue
+    val nBackValue = _nBack.value
+    val targetIndex = counter - nBackValue
+    val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
 
-        val targetIndex = counter - nBackValue
-        val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
 
-        _buttonColor.value = if (isMatch) Color.Green else Color.Red
-        _score.value ++
-        //todo score ++
-
-        viewModelScope.launch {
-            delay(eventInterval / 2)
-            _buttonColor.value = Color(96, 140, 219)
-
+    if (gameState.value.gameType==GameType.Audio&&buttonType==GameType.Audio){
+        if (isMatch) {
+            _buttonColor.value =Color.Green
+            _score.value ++
+        } else{
+            _buttonColor.value = Color.Red
+            _score.value --
         }
     }
+    if (gameState.value.gameType==GameType.Visual&&buttonType==GameType.Visual){
+         if (isMatch) {
+             _buttonColor.value =Color.Green
+             _score.value ++
+        } else{
+             _buttonColor.value = Color.Red
+             _score.value --
+        }
+    }
+    viewModelScope.launch {
+        delay(eventInterval.value / 2)
+        _buttonColor.value = Color(96, 140, 219)
 
+    }
+}
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -296,6 +344,16 @@ class GameVM(
     override fun decreaseLenght() {
         if (_lenght.value>1){
             _lenght.value -=1
+        }
+    }
+
+    override fun increaseEventInterval() {
+        _eventInterval.value +=1000
+    }
+
+    override fun decreaseEventInterval() {
+        if (_eventInterval.value>1000){
+            _eventInterval.value -=1000
         }
     }
 }

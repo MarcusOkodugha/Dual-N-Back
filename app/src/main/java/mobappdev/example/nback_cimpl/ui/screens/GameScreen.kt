@@ -67,6 +67,7 @@ fun GameScreen(
     val isTileHighlighted by vm.isTileHighlighted.collectAsState()
     val nBackValue by vm.nBack.collectAsState()
     val buttonColor by vm.buttonColor.collectAsState()
+    val score by vm.score.collectAsState()
 
     // Container
     Column(
@@ -75,6 +76,11 @@ fun GameScreen(
         ,
         horizontalAlignment = Alignment.CenterHorizontally,
     ){
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Event value ${gameState.eventValue.toString()}",
+            textAlign = TextAlign.Center
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -83,9 +89,12 @@ fun GameScreen(
              if (gameState.eventValue != -1) {
                 Text(
                     modifier = Modifier.fillMaxWidth(),
-                    text = "Current eventValue is: ${gameState.eventValue}",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color(240, 244, 251),
+                    text = "Score ${score.toString()}",
                     textAlign = TextAlign.Center
                 )
+
             }
         }
             Text(
@@ -178,13 +187,15 @@ fun GameButtons(
     val gameState by vm.gameState.collectAsState()
 
     Box(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .padding(vertical = 60.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
     ) {
         when (gameState.gameType) {
             GameType.AudioVisual -> {
                 Row(
                     modifier = Modifier
-                        .padding(vertical = 40.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -224,38 +235,26 @@ fun GameButtons(
                     }
                 }
             }
+
             GameType.Audio -> {
                 Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 2f)
-                        .border(2.dp, Color(24, 30, 37))
-                    ,
+
                     onClick = { vm.handleButtonTypePressed(GameType.Audio) },
                     colors = ButtonDefaults.buttonColors(buttonColor),
                     shape = RoundedCornerShape(2.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.sound_on),
-                        contentDescription = "Sound",
-                    )
+                    Text(text = "Sound")
                 }
             }
             GameType.Visual -> {
                 Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 2f)
-                        .border(2.dp, Color(24, 30, 37))
-                    ,
+
+
                     onClick = { vm.handleButtonTypePressed(GameType.Visual) },
                     colors = ButtonDefaults.buttonColors(buttonColor),
                     shape = RoundedCornerShape(2.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.visual),
-                        contentDescription = "Visual",
-                    )
+                    Text(text = "Position")
                 }
             }
         }
