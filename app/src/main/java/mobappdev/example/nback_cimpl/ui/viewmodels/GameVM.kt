@@ -38,8 +38,9 @@ interface GameViewModel {
     val gameState: StateFlow<GameState>
     val score: StateFlow<Int>
     val highscore: StateFlow<Int>
-//    val nBack: Int
     val nBack:  StateFlow<Int>
+    val grid: StateFlow<List<List<Boolean>>>
+    val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
 
     fun setGameType(gameType: GameType)
     fun startGame()
@@ -72,11 +73,21 @@ class GameVM(
     private val _nBack= MutableStateFlow(1)
     override val nBack: StateFlow<Int>
         get() = _nBack.asStateFlow()
+    private val _grid: MutableStateFlow<List<List<Boolean>>> = MutableStateFlow(emptyList())
+    override val grid: StateFlow<List<List<Boolean>>>
+        get() = _grid.asStateFlow()
+
     private var job: Job? = null  // coroutine job for the game event
     private val eventInterval: Long = 2000L  // 2000 ms (2s)
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
+    private val gridSize = 3
+//    private var grid: List<List<Boolean>> = List(gridSize) { List(gridSize) { false } }
+//    private var highlightedTilePosition: Pair<Int, Int>? = null
+    private val _highlightedTilePosition = MutableStateFlow<Pair<Int, Int>?>(null)
+    override val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
+        get() = _highlightedTilePosition.asStateFlow()
 
     override fun setGameType(gameType: GameType) {
         // update the gametype in the gamestate
@@ -130,6 +141,8 @@ class GameVM(
         // Todo: Replace this code for actual game code
         for (value in events) {
             _gameState.value = _gameState.value.copy(eventValue = value)
+            updateGrid()
+            updateHighlightedTilePosition()
             delay(eventInterval)
         }
     }
@@ -155,8 +168,25 @@ class GameVM(
             }
         }
     }
+//    fun getHighlightedTilePosition(): StateFlow<Pair<Int, Int>?> {
+//        return highlightedTilePosition
+//    }
+    private fun updateHighlightedTilePosition() {
+        val eventValue = _gameState.value.eventValue
+        val row = (eventValue - 1) / gridSize
+        val col = (eventValue - 1) % gridSize
+        _highlightedTilePosition.value = Pair(row, col)
+    }
+    private fun updateGrid() {
+        val grid = List(gridSize) { List(gridSize) { false } }
+
+        _grid.value = grid
+    }
+
 
 }
+
+//}
 
 // Class with the different game types
 enum class GameType{
@@ -182,7 +212,16 @@ class FakeVM: GameViewModel{
 //        get() = 2
     override val nBack: StateFlow<Int>
         get() = MutableStateFlow(0).asStateFlow()
+    override val grid: StateFlow<List<List<Boolean>>>
+        get() = MutableStateFlow(generateFakeGrid()).asStateFlow()
 
+    override val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
+        get() = MutableStateFlow(null).asStateFlow()
+
+    private fun generateFakeGrid(): List<List<Boolean>> {
+        // Implement logic to generate a fake grid
+        return List(3) { List(3) { true } }
+    }
     override fun setGameType(gameType: GameType) {
     }
 

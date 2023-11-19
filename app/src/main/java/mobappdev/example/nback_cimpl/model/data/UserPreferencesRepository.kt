@@ -1,4 +1,4 @@
-package mobappdev.example.nback_cimpl.data
+package mobappdev.example.nback_cimpl.model.data
 
 import android.util.Log
 import androidx.datastore.core.DataStore
