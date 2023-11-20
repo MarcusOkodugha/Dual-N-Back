@@ -1,4 +1,5 @@
 package mobappdev.example.nback_cimpl.ui.screens
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -76,32 +77,28 @@ fun GameScreen(
         ,
         horizontalAlignment = Alignment.CenterHorizontally,
     ){
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = "Event value ${gameState.eventValue.toString()}",
-            textAlign = TextAlign.Center
-        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+
         ){
+                Text(
+                    text = "Score ${score.toString()}",
+                    textAlign = TextAlign.Center
+                )
              if (gameState.eventValue != -1) {
                 Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = Color(240, 244, 251),
-                    text = "Score ${score.toString()}",
+                    text = "Event value ${gameState.eventValue.toString()}",
                     textAlign = TextAlign.Center
                 )
 
             }
-        }
             Text(
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color(240, 244, 251),
                 text = "N = "+ nBackValue.toString(),
             )
+        }
         Column(
             modifier = Modifier
                 .weight(0.75f)
@@ -110,12 +107,48 @@ fun GameScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             //grid
-
-            Grid(grid = gridState, highlightedTilePosition = highlightedTilePositionState,isTileHighlighted = isTileHighlighted)
+                ColumnOrRowBasedOnOrientation(vm = vm,grid = gridState, highlightedTilePosition = highlightedTilePositionState,isTileHighlighted = isTileHighlighted)
+//            Grid(grid = gridState, highlightedTilePosition = highlightedTilePositionState,isTileHighlighted = isTileHighlighted)
         }
-        Column(
-        ) {
-            GameButtons(vm = vm)
+
+    }
+}
+
+@Composable
+fun ColumnOrRowBasedOnOrientation(
+    vm: GameViewModel,
+    grid: List<List<Boolean>>,
+    highlightedTilePosition: Pair<Int, Int>?,
+    isTileHighlighted: Boolean,
+) {
+    val config = LocalConfiguration.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp)
+    ) {
+        if (config.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Grid(grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
+                GameButtons(vm = vm)
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+            ) {
+                GridHorizontal(grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
+                Column (
+                    verticalArrangement = Arrangement.Center,
+                ){
+                    GameButtons(vm = vm)
+                }
+//                GameButtonsHorizontal(vm = vm)
+            }
         }
     }
 }
@@ -138,14 +171,12 @@ fun Grid(
             .size(width = maxScreenSize, height = maxScreenSize)
             .padding(40.dp)
         ,
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
         for (i in grid.indices) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                 ,
-                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 for (j in grid[i].indices) {
                     Tile(
@@ -157,6 +188,8 @@ fun Grid(
     }
 }
 
+
+
 @Composable
 fun Tile(
     isHighlighted: Boolean,
@@ -165,6 +198,7 @@ fun Tile(
     Box(
         modifier = Modifier
             .size(100.dp)
+            .padding(4.dp)
             .background(
                 if (isHighlighted && isTileHighlighted) Color(231, 181, 106) else Color(
                     199,
@@ -180,6 +214,59 @@ fun Tile(
     }
 }
 @Composable
+fun GridHorizontal(
+    grid: List<List<Boolean>>,
+    highlightedTilePosition: Pair<Int, Int>?,
+    isTileHighlighted: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+            .padding(horizontal = 40.dp)
+        ,
+        horizontalAlignment = Alignment.CenterHorizontally,
+
+        ) {
+        for (i in grid.indices) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                ,
+            ) {
+                for (j in grid[i].indices) {
+                    TileHorizontal(
+                        isHighlighted = highlightedTilePosition == Pair(i, j),isTileHighlighted= isTileHighlighted
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TileHorizontal(
+    isHighlighted: Boolean,
+    isTileHighlighted: Boolean,
+) {
+    Box(
+        modifier = Modifier
+            .size(90.dp)
+            .padding(4.dp)
+            .background(
+                if (isHighlighted && isTileHighlighted) Color(231, 181, 106) else Color(
+                    199,
+                    216,
+                    240
+                )
+            )
+            .clip(RoundedCornerShape(20.dp)),
+        contentAlignment = Alignment.Center,
+
+        ) {
+
+    }
+}
+@Composable
 fun GameButtons(
     vm: GameViewModel,
 ) {
@@ -188,8 +275,8 @@ fun GameButtons(
 
     Box(
         modifier = Modifier
-            .padding(vertical = 60.dp)
-            .fillMaxWidth(),
+            .padding(vertical = 100.dp)
+            ,
         contentAlignment = Alignment.Center
     ) {
         when (gameState.gameType) {
