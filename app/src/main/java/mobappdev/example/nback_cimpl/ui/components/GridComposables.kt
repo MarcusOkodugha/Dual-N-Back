@@ -10,18 +10,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-
+import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 @Composable
 fun Grid(
     grid: List<List<Boolean>>,
     highlightedTilePosition: Pair<Int, Int>?,
     isTileHighlighted: Boolean,
+    vm: GameViewModel,
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
@@ -44,9 +49,7 @@ fun Grid(
                 ,
             ) {
                 for (j in grid[i].indices) {
-                    Tile(
-                        isHighlighted = highlightedTilePosition == Pair(i, j),isTileHighlighted= isTileHighlighted
-                    )
+                    Tile(vm=vm,isHighlighted = highlightedTilePosition == Pair(i, j),isTileHighlighted= isTileHighlighted)
                 }
             }
         }
@@ -57,10 +60,18 @@ fun Grid(
 fun Tile(
     isHighlighted: Boolean,
     isTileHighlighted: Boolean,
+    vm: GameViewModel,
 ) {
+    val sizeValue = vm.size.value
+
+
+    var tileSize = 100f
+    if (sizeValue != null) {
+        tileSize = 300 / sizeValue.toFloat()
+    }
     Box(
         modifier = Modifier
-            .size(100.dp)
+            .size(tileSize.dp)
             .padding(4.dp)
             .background(
                 if (isHighlighted && isTileHighlighted) Color(231, 181, 106) else Color(
@@ -81,6 +92,7 @@ fun GridHorizontal(
     grid: List<List<Boolean>>,
     highlightedTilePosition: Pair<Int, Int>?,
     isTileHighlighted: Boolean,
+    vm: GameViewModel,
 ) {
     Column(
         modifier = Modifier
@@ -97,7 +109,7 @@ fun GridHorizontal(
                 ,
             ) {
                 for (j in grid[i].indices) {
-                    TileHorizontal(
+                    TileHorizontal(vm= vm,
                         isHighlighted = highlightedTilePosition == Pair(i, j),isTileHighlighted= isTileHighlighted
                     )
                 }
@@ -110,10 +122,18 @@ fun GridHorizontal(
 fun TileHorizontal(
     isHighlighted: Boolean,
     isTileHighlighted: Boolean,
+    vm: GameViewModel,
 ) {
+    val sizeValue = vm.size.value
+
+
+    var tileSize = 100f
+    if (sizeValue != null) {
+        tileSize = 300 / sizeValue.toFloat()
+    }
     Box(
         modifier = Modifier
-            .size(90.dp)
+            .size(tileSize.dp)
             .padding(4.dp)
             .background(
                 if (isHighlighted && isTileHighlighted) Color(231, 181, 106) else Color(

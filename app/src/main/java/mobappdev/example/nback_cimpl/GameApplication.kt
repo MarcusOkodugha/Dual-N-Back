@@ -6,7 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import mobappdev.example.nback_cimpl.model.data.UserPreferencesRepository
-
+import mobappdev.example.nback_cimpl.model.data.SettingsRepository
 /**
  * This is the Main Application
  *
@@ -37,10 +37,12 @@ class GameApplication: Application() {
     }
     //todo använs för att spara highescore
     lateinit var userPreferencesRespository: UserPreferencesRepository
+    lateinit var settingsRepository: SettingsRepository
 
     override fun onCreate() {
         super.onCreate()
         instance = this
         userPreferencesRespository = UserPreferencesRepository(dataStore)
+        settingsRepository = SettingsRepository(dataStore)
     }
 }

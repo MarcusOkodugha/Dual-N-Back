@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.GameApplication
 import mobappdev.example.nback_cimpl.NBackHelper
 import mobappdev.example.nback_cimpl.model.data.UserPreferencesRepository
+import mobappdev.example.nback_cimpl.model.data.SettingsRepository
+import mobappdev.example.nback_cimpl.model.data.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
 import android.speech.tts.TextToSpeech.SUCCESS
@@ -74,7 +76,8 @@ interface GameViewModel {
 // Inside your GameVM class
 
 class GameVM(
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val settingsRepository: SettingsRepository
 ): GameViewModel, ViewModel(),OnInitListener {
     private var counter = 0
     private val _gameState = MutableStateFlow(GameState())
@@ -142,15 +145,22 @@ class GameVM(
         job?.cancel()  // Cancel any existing game loop
         reset()
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
-//        events = nBackHelper.generateNBackString(length.value, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
-// With your hardcoded array
-//        events =
-        eventsAudio = arrayOf(2, 1, 1, 3, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
-        eventsVisual = arrayOf(2, 1, 1, 3, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
+        eventsVisual = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+        eventsAudio = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+//        eventsVisual = arrayOf(1, 1, 4, 4, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
+//        eventsAudio = arrayOf(2, 3, 4, 4, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
 
-//        Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
+        val currentSettings = Settings(
+            numberOfEvents = _lenght.value,
+            eventInterval = _eventInterval.value,
+            nBack = nBack.value,
+            gridSize = size.value,
+            numberOfSpokenLetters = _combinations.value
+        )
+
 
         job = viewModelScope.launch {
+        settingsRepository.saveSettings(currentSettings)
             when (gameState.value.gameType) {
                 GameType.Audio -> runAudioGame()
                 GameType.AudioVisual -> runAudioVisualGame()
@@ -172,30 +182,16 @@ class GameVM(
     private suspend fun runAudioGame() {
         speakLetter(convertToLetter(counter+1))
         for (value in eventsAudio) {
-            _gameState.value = _gameState.value.copy(eventValue = value)
+            _gameState.value = _gameState.value.copy(eventValueAudio = value)
             speakLetter(convertToLetter(value))
             delay(eventInterval.value)
-
-            val currentEventValue = _gameState.value.eventValue
-            val nBackValue = _nBack.value
-            val targetIndex = counter - nBackValue
-            val isMatch = targetIndex >= 0 && eventsAudio.getOrNull(targetIndex) == currentEventValue
-
-            Log.e("Logic", ".")
-            Log.e("Logic", "value of target ${eventsAudio.getOrNull(targetIndex)}")
-            Log.e("Logic", "curent value $currentEventValue")
-            Log.e("Logic", "Match $isMatch")
-            Log.e("Logic", "Score ${score.value}")
-
-            Log.e("Logic", ".")
-
             counter++
         }
     }
 
     private suspend fun runVisualGame(){
         for (value in eventsVisual) {
-            _gameState.value = _gameState.value.copy(eventValue = value)
+            _gameState.value = _gameState.value.copy(eventValueVisual = value)
             updateGrid()
             _isTileHighlighted.value = !_isTileHighlighted.value
             updateHighlightedTilePosition()
@@ -203,68 +199,57 @@ class GameVM(
             _isTileHighlighted.value = !_isTileHighlighted.value
             updateHighlightedTilePosition()
             delay(eventInterval.value/2)
-
-            val currentEventValue = _gameState.value.eventValue
-            val nBackValue = _nBack.value
-            val targetIndex = counter - nBackValue
-            val isMatch = targetIndex >= 0 && eventsVisual.getOrNull(targetIndex) == currentEventValue
-
-            Log.e("Logic", ".")
-            Log.e("Logic", "value of target ${eventsVisual.getOrNull(targetIndex)}")
-            Log.e("Logic", "curent value $currentEventValue")
-            Log.e("Logic", "Match $isMatch")
-            Log.e("Logic", "Score ${score.value}")
-
-            Log.e("Logic", ".")
-
             counter++
         }
     }
 
-    private suspend fun runAudioVisualGame(){
-        for (value in eventsAudio) {
-            _gameState.value = _gameState.value.copy(eventValue = value)
-            updateGrid()
+private suspend fun runAudioVisualGame() {
+    for ((audioValue, visualValue) in eventsAudio.zip(eventsVisual)) {
+        _gameState.value = _gameState.value.copy(eventValueAudio = audioValue)
+        _gameState.value = _gameState.value.copy(eventValueVisual = visualValue)
+        updateGrid()
+        speakLetter(convertToLetter(audioValue))
+        _isTileHighlighted.value = true
+        updateHighlightedTilePosition()
+        delay(eventInterval.value / 2)
+        _isTileHighlighted.value = false
+        updateHighlightedTilePosition()
+        delay(eventInterval.value / 2)
+        counter++
 
-            speakLetter(convertToLetter(value))
-
-            _isTileHighlighted.value = true
-            updateHighlightedTilePosition()
-            delay(eventInterval.value/2)
-            _isTileHighlighted.value = false
-            updateHighlightedTilePosition()
-            delay(eventInterval.value/2)
-
-            counter++
-
-        }
+        // Now, you can use visualValue in a similar way if needed
     }
-
+}
 
 override fun checkMatch(buttonType: GameType) {
-     val currentEventValue = _gameState.value.eventValue
+    val currentEventValueAudio = _gameState.value.eventValueAudio
+    val currentEventValueVisual = _gameState.value.eventValueVisual
     val nBackValue = _nBack.value
     val targetIndex = counter - nBackValue
-    val isMatchAudio = targetIndex >= 0 && eventsAudio.getOrNull(targetIndex) == currentEventValue
-    val isMatchVisual = targetIndex >= 0 && eventsVisual.getOrNull(targetIndex) == currentEventValue
-    if (_gameState.value.matchedEvents.contains(currentEventValue)) {
-        return
-    }
+    val isMatchAudio = targetIndex >= 0 && eventsAudio.getOrNull(targetIndex) == currentEventValueAudio
+
+    val isMatchVisual = targetIndex >= 0 && eventsVisual.getOrNull(targetIndex) == currentEventValueVisual
     if ((gameState.value.gameType==GameType.Audio||gameState.value.gameType==GameType.AudioVisual)&&buttonType==GameType.Audio){
+        if (_gameState.value.matchedEventsAudio.contains(currentEventValueAudio)) {
+            return
+        }
         if (isMatchAudio) {
             _buttonColor.value =Color.Green
             _score.value ++
-            _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
+            _gameState.value = _gameState.value.copy(matchedEventsAudio = _gameState.value.matchedEventsAudio + currentEventValueAudio)
         } else{
             _buttonColor.value = Color.Red
             _score.value --
         }
     }
     if ((gameState.value.gameType==GameType.Visual||gameState.value.gameType==GameType.AudioVisual)&&buttonType==GameType.Visual){
+        if (_gameState.value.matchedEventsVisual.contains(currentEventValueVisual)) {
+            return
+        }
          if (isMatchVisual) {
              _buttonColor.value =Color.Green
              _score.value ++
-             _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
+             _gameState.value = _gameState.value.copy(matchedEventsVisual = _gameState.value.matchedEventsVisual + currentEventValueVisual)
         } else{
              _buttonColor.value = Color.Red
              _score.value --
@@ -274,7 +259,7 @@ override fun checkMatch(buttonType: GameType) {
         if (isMatchVisual&&isMatchAudio) {
             _buttonColor.value =Color.Green
             _score.value ++
-            _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
+            _gameState.value = _gameState.value.copy(matchedEventsAudioVisual = _gameState.value.matchedEventsVisual + currentEventValueVisual)//test
         } else{
             _buttonColor.value = Color.Red
             _score.value --
@@ -290,22 +275,26 @@ override fun checkMatch(buttonType: GameType) {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as GameApplication)
-                GameVM(application.userPreferencesRespository)
+                GameVM(application.userPreferencesRespository,application.settingsRepository)
             }
         }
     }
-
     init {
-        // Code that runs during creation of the vm
+        // Load settings when the ViewModel is initialized
         viewModelScope.launch {
             userPreferencesRepository.highscore.collect {
                 _highscore.value = it
             }
+            val loadedSettings = settingsRepository.loadSettings()
+            _nBack.value = loadedSettings.nBack
+            _size.value = loadedSettings.gridSize
+            _combinations.value = loadedSettings.numberOfSpokenLetters
+            _lenght.value = loadedSettings.numberOfEvents
+            _eventInterval.value = loadedSettings.eventInterval
         }
     }
-
     private fun updateHighlightedTilePosition() {
-        val eventValue = _gameState.value.eventValue
+        val eventValue = _gameState.value.eventValueVisual
         val row = (eventValue - 1) / size.value
         val col = (eventValue - 1) % size.value
         _highlightedTilePosition.value = Pair(row, col)
@@ -382,8 +371,11 @@ enum class GameType{
 data class GameState(
     // You can use this state to push values from the VM to your UI.
     val gameType: GameType = GameType.Visual,  // Type of the game
-    val eventValue: Int = -1,  // The value of the array string
-    val matchedEvents: Set<Int> = emptySet()
+    val eventValueAudio: Int = -1,  // The value of the array string
+    val eventValueVisual: Int = -1,  // The value of the array string
+    val matchedEventsAudio: Set<Int> = emptySet(),
+    val matchedEventsVisual: Set<Int> = emptySet(),
+    val matchedEventsAudioVisual: Set<Int> = emptySet()
 )
 
 

@@ -50,9 +50,9 @@ fun GameScreen(
                     text = "Score ${score.toString()}",
                     textAlign = TextAlign.Center
                 )
-             if (gameState.eventValue != -1) {
+             if (gameState.eventValueVisual != -1) {
                 Text(
-                    text = "Event value ${gameState.eventValue.toString()}",
+                    text = "Event value ${gameState.eventValueVisual.toString()}",
                     textAlign = TextAlign.Center
                 )
             }
@@ -89,7 +89,7 @@ fun ColumnOrRowBasedOnOrientation(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Grid(grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
+                Grid(vm=vm,grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
                 GameButtons(vm = vm)
             }
         } else {
@@ -97,7 +97,7 @@ fun ColumnOrRowBasedOnOrientation(
                 modifier = Modifier
                     .fillMaxWidth(),
             ) {
-                GridHorizontal(grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
+                GridHorizontal( vm=vm, grid = grid, highlightedTilePosition = highlightedTilePosition,isTileHighlighted = isTileHighlighted)
                 Column (
                     verticalArrangement = Arrangement.Center,
                 ){
