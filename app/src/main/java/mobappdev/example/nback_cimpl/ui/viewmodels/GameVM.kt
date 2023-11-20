@@ -58,7 +58,6 @@ interface GameViewModel {
 
     fun setGameType(gameType: GameType)
     fun startGame()
-    fun checkMatch()
     fun increaseNCounter()
     fun decreaseNCounter()
     fun increaseCombinations()
@@ -69,7 +68,7 @@ interface GameViewModel {
     fun decreaseLenght()
     fun increaseEventInterval()
     fun decreaseEventInterval()
-    fun handleButtonTypePressed(buttonType: GameType)
+    fun checkMatch(buttonType: GameType)
     fun setButtonColor(color: Color)
 }
 // Inside your GameVM class
@@ -105,7 +104,9 @@ class GameVM(
 
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
-    private var events = emptyArray<Int>()  // Array with all events
+//    private var events = emptyArray<Int>()  // Array with all events
+    private var eventsAudio = emptyArray<Int>()  // Array with all events
+    private var eventsVisual = emptyArray<Int>()  // Array with all events
     private val _highlightedTilePosition = MutableStateFlow<Pair<Int, Int>?>(null)
     override val highlightedTilePosition: StateFlow<Pair<Int, Int>?>
         get() = _highlightedTilePosition.asStateFlow()
@@ -143,16 +144,22 @@ class GameVM(
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
 //        events = nBackHelper.generateNBackString(length.value, 9, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
 // With your hardcoded array
-        events = arrayOf(2, 1, 2, 3, 1, 5, 1, 8, 9, 4)//todo remve hardcodeing
-        Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
+//        events =
+        eventsAudio = arrayOf(2, 1, 1, 3, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
+        eventsVisual = arrayOf(2, 1, 1, 3, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
+
+//        Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
 
         job = viewModelScope.launch {
             when (gameState.value.gameType) {
-                GameType.Audio -> runAudioGame(events)
-                GameType.AudioVisual -> runAudioVisualGame(events)
-                GameType.Visual -> runVisualGame(events)
+                GameType.Audio -> runAudioGame()
+                GameType.AudioVisual -> runAudioVisualGame()
+                GameType.Visual -> runVisualGame()
             }
-            // Todo: update the highscore
+            if (_score.value > _highscore.value) {
+                _highscore.value = _score.value
+                userPreferencesRepository.saveHighScore(_score.value)
+            }
         }
     }
     private fun reset(){
@@ -162,27 +169,20 @@ class GameVM(
         _grid.value = emptyList()
     }
 
-    override fun checkMatch() {
-        /**
-         * Todo: This function should check if there is a match when the user presses a match button
-         * Make sure the user can only register a match once for each event.
-         */
-    }
-
-    private suspend fun runAudioGame(events: Array<Int>) {
+    private suspend fun runAudioGame() {
         speakLetter(convertToLetter(counter+1))
-        for (value in events) {
+        for (value in eventsAudio) {
             _gameState.value = _gameState.value.copy(eventValue = value)
-            delay(eventInterval.value)
             speakLetter(convertToLetter(value))
+            delay(eventInterval.value)
 
             val currentEventValue = _gameState.value.eventValue
             val nBackValue = _nBack.value
             val targetIndex = counter - nBackValue
-            val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
+            val isMatch = targetIndex >= 0 && eventsAudio.getOrNull(targetIndex) == currentEventValue
 
             Log.e("Logic", ".")
-            Log.e("Logic", "value of target ${events.getOrNull(targetIndex)}")
+            Log.e("Logic", "value of target ${eventsAudio.getOrNull(targetIndex)}")
             Log.e("Logic", "curent value $currentEventValue")
             Log.e("Logic", "Match $isMatch")
             Log.e("Logic", "Score ${score.value}")
@@ -193,8 +193,8 @@ class GameVM(
         }
     }
 
-    private suspend fun runVisualGame(events: Array<Int>){
-        for (value in events) {
+    private suspend fun runVisualGame(){
+        for (value in eventsVisual) {
             _gameState.value = _gameState.value.copy(eventValue = value)
             updateGrid()
             _isTileHighlighted.value = !_isTileHighlighted.value
@@ -207,10 +207,10 @@ class GameVM(
             val currentEventValue = _gameState.value.eventValue
             val nBackValue = _nBack.value
             val targetIndex = counter - nBackValue
-            val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
+            val isMatch = targetIndex >= 0 && eventsVisual.getOrNull(targetIndex) == currentEventValue
 
             Log.e("Logic", ".")
-            Log.e("Logic", "value of target ${events.getOrNull(targetIndex)}")
+            Log.e("Logic", "value of target ${eventsVisual.getOrNull(targetIndex)}")
             Log.e("Logic", "curent value $currentEventValue")
             Log.e("Logic", "Match $isMatch")
             Log.e("Logic", "Score ${score.value}")
@@ -221,8 +221,8 @@ class GameVM(
         }
     }
 
-    private suspend fun runAudioVisualGame(events: Array<Int>){
-        for (value in events) {
+    private suspend fun runAudioVisualGame(){
+        for (value in eventsAudio) {
             _gameState.value = _gameState.value.copy(eventValue = value)
             updateGrid()
 
@@ -240,29 +240,44 @@ class GameVM(
         }
     }
 
-override fun handleButtonTypePressed(buttonType: GameType) {
-    val currentEventValue = _gameState.value.eventValue
+
+override fun checkMatch(buttonType: GameType) {
+     val currentEventValue = _gameState.value.eventValue
     val nBackValue = _nBack.value
     val targetIndex = counter - nBackValue
-    val isMatch = targetIndex >= 0 && events.getOrNull(targetIndex) == currentEventValue
-
-
-    if (gameState.value.gameType==GameType.Audio&&buttonType==GameType.Audio){
-        if (isMatch) {
+    val isMatchAudio = targetIndex >= 0 && eventsAudio.getOrNull(targetIndex) == currentEventValue
+    val isMatchVisual = targetIndex >= 0 && eventsVisual.getOrNull(targetIndex) == currentEventValue
+    if (_gameState.value.matchedEvents.contains(currentEventValue)) {
+        return
+    }
+    if ((gameState.value.gameType==GameType.Audio||gameState.value.gameType==GameType.AudioVisual)&&buttonType==GameType.Audio){
+        if (isMatchAudio) {
             _buttonColor.value =Color.Green
             _score.value ++
+            _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
         } else{
             _buttonColor.value = Color.Red
             _score.value --
         }
     }
-    if (gameState.value.gameType==GameType.Visual&&buttonType==GameType.Visual){
-         if (isMatch) {
+    if ((gameState.value.gameType==GameType.Visual||gameState.value.gameType==GameType.AudioVisual)&&buttonType==GameType.Visual){
+         if (isMatchVisual) {
              _buttonColor.value =Color.Green
              _score.value ++
+             _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
         } else{
              _buttonColor.value = Color.Red
              _score.value --
+        }
+    }
+    if (gameState.value.gameType==GameType.AudioVisual&&buttonType==GameType.AudioVisual){
+        if (isMatchVisual&&isMatchAudio) {
+            _buttonColor.value =Color.Green
+            _score.value ++
+            _gameState.value = _gameState.value.copy(matchedEvents = _gameState.value.matchedEvents + currentEventValue)
+        } else{
+            _buttonColor.value = Color.Red
+            _score.value --
         }
     }
     viewModelScope.launch {
@@ -367,7 +382,8 @@ enum class GameType{
 data class GameState(
     // You can use this state to push values from the VM to your UI.
     val gameType: GameType = GameType.Visual,  // Type of the game
-    val eventValue: Int = -1  // The value of the array string
+    val eventValue: Int = -1,  // The value of the array string
+    val matchedEvents: Set<Int> = emptySet()
 )
 
 
