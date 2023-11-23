@@ -145,11 +145,10 @@ class GameVM(
         job?.cancel()  // Cancel any existing game loop
         reset()
         // Get the events from our C-model (returns IntArray, so we need to convert to Array<Int>)
-        eventsVisual = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
-        eventsAudio = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
-//        eventsVisual = arrayOf(1, 1, 4, 4, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
-//        eventsAudio = arrayOf(2, 3, 4, 4, 1, 5, 1, 1, 9, 4)//todo remve hardcodeing
-
+//        eventsVisual = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+//        eventsAudio = nBackHelper.generateNBackString(length.value, combinations.value, 30, nBack.value).toList().toTypedArray()  // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
+        eventsVisual = arrayOf(1, 1, 4, 4, 1, 5, 1, 1, 9, 4)//testing
+        eventsAudio = arrayOf(2, 3, 4, 4, 1, 5, 1, 1, 9, 4)
         val currentSettings = Settings(
             numberOfEvents = _lenght.value,
             eventInterval = _eventInterval.value,
@@ -217,7 +216,6 @@ private suspend fun runAudioVisualGame() {
         delay(eventInterval.value / 2)
         counter++
 
-        // Now, you can use visualValue in a similar way if needed
     }
 }
 
