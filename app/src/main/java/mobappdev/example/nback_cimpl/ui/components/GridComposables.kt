@@ -60,7 +60,7 @@ fun Grid(
 fun Tile(
     isHighlighted: Boolean,
     isTileHighlighted: Boolean,
-    vm: GameViewModel,
+    vm: GameViewModel,t
 ) {
     val sizeValue = vm.size.value
 
